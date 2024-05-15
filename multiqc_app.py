@@ -1,12 +1,14 @@
-import streamlit as st
-import multiqc
-from multiqc.plots import bargraph
-from urllib.request import urlopen
+import json
 from io import BytesIO
+from urllib.request import urlopen
 from zipfile import ZipFile
+
+import multiqc
 import pandas as pd
 import plotly.graph_objects as go
-import json
+import streamlit as st
+import streamlit.components.v1 as components
+from multiqc.plots import bargraph
 
 # Sidebar
 with st.sidebar:
@@ -14,38 +16,43 @@ with st.sidebar:
     st.write("Edit below to see the output update in real-time.")
 
     # Set DATA_URL in an input
-    DATA_URL = st.text_input("Demo Data URL", "https://multiqc.info/examples/hi-c/data.zip")
+    DATA_URL = st.text_input(
+        "Demo Data URL", "https://multiqc.info/examples/hi-c/data.zip"
+    )
 
     # Set EXAMPLE_CUSTOM_DATA in an input
-    EXAMPLE_CUSTOM_DATA = st.text_area("Custom Data", """{
+    EXAMPLE_CUSTOM_DATA = st.text_area(
+        "Custom Data",
+        """{
         "sample 1": {"aligned": 23542, "not_aligned": 343},
         "sample 2": {"aligned": 1275, "not_aligned": 7328}
-    }""")
-
+    }""",
+    )
 
 
 # Set the title
-st.title('MultiQC Streamlit App')
+st.title("MultiQC Streamlit App")
+
 
 # Get some data
-def download_and_unzip(url, extract_to='.'):
+def download_and_unzip(url, extract_to="."):
     http_response = urlopen(url)
     zipfile = ZipFile(BytesIO(http_response.read()))
     zipfile.extractall(path=extract_to)
 
 
 # Create a text element and let the reader know the data is loading.
-data_load_state = st.text('Loading example logs...')
+data_load_state = st.text("Loading example logs...")
 # Load 10,000 rows of data into the dataframe.
 data = download_and_unzip(DATA_URL)
 # Notify the reader that the data was successfully loaded.
-data_load_state.text('Loading example logs...done!')
+data_load_state.text("Loading example logs...done!")
 
 
 # Parse logs
-data_parse_state = st.text('Parsing logs...')
-multiqc.parse_logs('./data')
-data_parse_state.text('Parsing logs...done!')
+data_parse_state = st.text("Parsing logs...")
+multiqc.parse_logs("./data")
+data_parse_state.text("Parsing logs...done!")
 
 with st.expander("Parsed data details"):
     st.subheader("Modules")
@@ -66,8 +73,8 @@ st.write("This is MultiQC plot from the parsed data.")
 hicup_plot = multiqc.get_plot("HiCUP", "Read Pair Filtering")
 hicup_plot_pt = hicup_plot.get_figure(0)
 hicup_plot_pt.update_layout(
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor="rgba(0,0,0,0)",
+    paper_bgcolor="rgba(0,0,0,0)",
     xaxis=go.layout.XAxis(),
     yaxis=go.layout.YAxis(),
     modebar=go.layout.Modebar(),
@@ -83,17 +90,14 @@ module = multiqc.BaseMultiqcModule(
 )
 custom_plot = bargraph.plot(
     data=json.loads(EXAMPLE_CUSTOM_DATA),
-    pconfig={
-        "id": "my_metrics_barplot",
-        "title": "My metrics"
-    }
+    pconfig={"id": "my_metrics_barplot", "title": "My metrics"},
 )
 
 # Show a single plot
 custom_plot_pt = custom_plot.get_figure(0)
 custom_plot_pt.update_layout(
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor="rgba(0,0,0,0)",
+    paper_bgcolor="rgba(0,0,0,0)",
     xaxis=go.layout.XAxis(),
     yaxis=go.layout.YAxis(),
     modebar=go.layout.Modebar(),
@@ -101,10 +105,10 @@ custom_plot_pt.update_layout(
 st.plotly_chart(custom_plot_pt)
 
 
-
 # Generate the report
-module.add_section(
-    plot=custom_plot
-)
+st.header("MultiQC Report")
+module.add_section(plot=custom_plot)
 multiqc.report.modules.append(module)
-# multiqc.write_report()
+multiqc.write_report(force=True, output_dir="multiqc_report")
+html_data = open("multiqc_report/multiqc_report.html").read()
+components.html(html_data, scrolling=True, height=500)
