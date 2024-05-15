@@ -1,0 +1,4 @@
+multiqc>=1.22
+pandas
+plotly
+streamlit
