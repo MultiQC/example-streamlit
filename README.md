@@ -15,7 +15,7 @@ You can also [deploy this Streamlit app yourself](https://share.streamlit.io/dep
 First, install streamlit:
 
 ```bash
-pip install streamlit
+pip install -r requirements.txt
 ```
 
 Then run the app:
