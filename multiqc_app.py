@@ -79,8 +79,9 @@ data_loaded_successfully = False
 bytes_data = None
 
 # Check if data exists in session state
-if st.session_state.bytes_data is not None:
-
+if st.session_state.bytes_data is None:
+    st.info("Please select an input method and provide data using the sidebar to start the analysis.")
+else:
     st.success(f"Data loaded from {st.session_state.data_source}")
 
     # Create a text element and let the reader know the data is loading.
@@ -184,6 +185,4 @@ if st.session_state.bytes_data is not None:
          st.error(f"Error generating MultiQC report: {e}")
          report_gen_state.text(f"Error generating MultiQC report: {e}")
 
-else:
-    st.info("Please select an input method and provide data using the sidebar to start the analysis.")
 
