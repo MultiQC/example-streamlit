@@ -26,26 +26,10 @@ with st.sidebar:
     # --- Input Method Selection --- #
     input_method = st.radio(
         "Choose input method",
-        ("Upload File", "Load from URL"),
-        help="Select how to provide the MultiQC data."
+        ("Load from URL", "Upload File")
     )
 
-    if input_method == "Upload File":
-        # --- File Uploader --- #
-        st.write("Upload a MultiQC data ZIP file to analyze.")
-        # File uploader
-        uploaded_file = st.file_uploader(
-            "Upload Data ZIP", type="zip", help="Upload a ZIP archive containing MultiQC data."
-        )
-        if uploaded_file is not None:
-            # Update session state immediately on upload
-            st.session_state.bytes_data = uploaded_file.getvalue()
-            st.session_state.data_source = f"File: {uploaded_file.name}"
-            # Clear URL source if a file is uploaded
-            # data_url = None # Not strictly necessary as we check input_method
-
-    elif input_method == "Load from URL":
-        # --- URL Input with Submit Button --- #
+    if input_method == "Load from URL":
         st.write("Enter the URL of a MultiQC data ZIP file.")
         # Set DATA_URL in an input
         data_url = st.text_input(
@@ -56,18 +40,25 @@ with st.sidebar:
                 with st.spinner(f"Downloading from {data_url}..."):
                     try:
                         http_response = urlopen(data_url)
-                        # Update session state only on successful button click + download
                         st.session_state.bytes_data = http_response.read()
                         st.session_state.data_source = f"URL: {data_url}"
-                        # Clear file source if URL is loaded
-                        # uploaded_file = None # Not strictly necessary
                         st.success("Download successful!")
                     except Exception as e:
                         st.error(f"Error downloading from URL: {e}")
-                        st.session_state.bytes_data = None # Clear data on error
+                        st.session_state.bytes_data = None
                         st.session_state.data_source = None
             else:
                 st.warning("Please enter a URL.")
+    elif input_method == "Upload File":
+        # File uploader
+        st.write("Upload a MultiQC data ZIP file to analyze.")
+        uploaded_file = st.file_uploader(
+            "Upload Data ZIP", type="zip", help="Upload a ZIP archive containing MultiQC data."
+        )
+        # Update session state immediately on upload
+        if uploaded_file is not None:
+            st.session_state.bytes_data = uploaded_file.getvalue()
+            st.session_state.data_source = f"File: {uploaded_file.name}"
 
     # Set EXAMPLE_CUSTOM_DATA in an input - Keep in sidebar for editing anytime
     EXAMPLE_CUSTOM_DATA = st.text_area(
@@ -90,7 +81,7 @@ bytes_data = None
 # Check if data exists in session state
 if st.session_state.bytes_data is not None:
 
-    st.success(f"Data loaded from: {st.session_state.data_source}")
+    st.success(f"Data loaded from {st.session_state.data_source}")
 
     # Create a text element and let the reader know the data is loading.
     data_load_state = st.text("Extracting data...")
@@ -126,11 +117,9 @@ if st.session_state.bytes_data is not None:
     st.write("HiCUP QC data from the parsed logs.")
     try:
         hicup_data = multiqc.get_module_data(module="HiCUP")
-        if hicup_data:
-             st.dataframe(pd.DataFrame(hicup_data))
-        else:
-            st.write("No HiCUP data found in logs.")
-    except KeyError:
+        assert(hicup_data)
+        st.dataframe(pd.DataFrame(hicup_data))
+    except (KeyError, AssertionError):
         st.warning("HiCUP module not found in parsed data.")
 
     # Show a plot (assuming HiCUP plot exists, original behavior)
@@ -148,7 +137,7 @@ if st.session_state.bytes_data is not None:
         )
         st.plotly_chart(hicup_plot_pt)
     except (KeyError, IndexError, AttributeError):
-         st.warning("Could not retrieve HiCUP plot 'Read Pair Filtering'.")
+        st.warning("Could not retrieve HiCUP plot 'Read Pair Filtering'.")
 
     # Add a plot with some custom data
     st.header("Custom plot")
@@ -198,6 +187,3 @@ if st.session_state.bytes_data is not None:
 else:
     st.info("Please select an input method and provide data using the sidebar to start the analysis.")
 
-# Clean up extracted data directory (optional, uncomment if needed)
-# import shutil
-# shutil.rmtree("./data", ignore_errors=True)
