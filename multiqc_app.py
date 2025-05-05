@@ -19,7 +19,7 @@ if "data_source" not in st.session_state:
 
 input_method = None
 uploaded_file = None
-data_url = None
+data_url = "https://seqera.io/examples/hi-c/data.zip"
 with st.sidebar:
     st.title("MultiQC Streamlit App")
 
@@ -31,31 +31,20 @@ with st.sidebar:
 
     if input_method == "Load from URL":
         st.write("Enter the URL of a MultiQC data ZIP file.")
-        # Set DATA_URL in an input
-        data_url = st.text_input(
-            "Demo Data URL", "https://seqera.io/examples/hi-c/data.zip"
-        )
+        data_url = st.text_input("Demo Data URL", data_url)
         if st.button("Fetch and Load Data"):
-            if data_url:
-                with st.spinner(f"Downloading from {data_url}..."):
-                    try:
-                        http_response = urlopen(data_url)
-                        st.session_state.bytes_data = http_response.read()
-                        st.session_state.data_source = f"URL: {data_url}"
-                        st.success("Download successful!")
-                    except Exception as e:
-                        st.error(f"Error downloading from URL: {e}")
-                        st.session_state.bytes_data = None
-                        st.session_state.data_source = None
-            else:
-                st.warning("Please enter a URL.")
+            try:
+                http_response = urlopen(data_url)
+                st.session_state.bytes_data = http_response.read()
+                st.session_state.data_source = f"URL: {data_url}"
+            except Exception as e:
+                st.error(f"Error downloading from URL: {e}")
+                st.session_state.bytes_data = None
+                st.session_state.data_source = None
+
     elif input_method == "Upload File":
-        # File uploader
         st.write("Upload a MultiQC data ZIP file to analyze.")
-        uploaded_file = st.file_uploader(
-            "Upload Data ZIP", type="zip", help="Upload a ZIP archive containing MultiQC data."
-        )
-        # Update session state immediately on upload
+        uploaded_file = st.file_uploader("Upload Data ZIP", type="zip")
         if uploaded_file is not None:
             st.session_state.bytes_data = uploaded_file.getvalue()
             st.session_state.data_source = f"File: {uploaded_file.name}"
@@ -118,7 +107,7 @@ else:
     st.write("HiCUP QC data from the parsed logs.")
     try:
         hicup_data = multiqc.get_module_data(module="HiCUP")
-        assert(hicup_data)
+        assert (hicup_data)
         st.dataframe(pd.DataFrame(hicup_data))
     except (KeyError, AssertionError):
         st.warning("HiCUP module not found in parsed data.")
@@ -145,9 +134,7 @@ else:
     st.write("This is a custom plot with some custom data contained in this script.")
     try:
         custom_data = json.loads(EXAMPLE_CUSTOM_DATA)
-        module = multiqc.BaseMultiqcModule(
-            anchor="my_metrics",
-        )
+        module = multiqc.BaseMultiqcModule(anchor="my_metrics")
         custom_plot = bargraph.plot(
             data=custom_data,
             pconfig={"id": "my_metrics_barplot", "title": "My metrics"},
@@ -182,7 +169,5 @@ else:
         components.html(html_data, scrolling=True, height=500)
         report_gen_state.text("Generating MultiQC report...done!")
     except Exception as e:
-         st.error(f"Error generating MultiQC report: {e}")
-         report_gen_state.text(f"Error generating MultiQC report: {e}")
-
-
+        st.error(f"Error generating MultiQC report: {e}")
+        report_gen_state.text(f"Error generating MultiQC report: {e}")
