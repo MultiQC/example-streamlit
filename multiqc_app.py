@@ -17,7 +17,7 @@ with st.sidebar:
 
     # Set DATA_URL in an input
     DATA_URL = st.text_input(
-        "Demo Data URL", "https://multiqc.info/examples/hi-c/data.zip"
+        "Demo Data URL", "https://seqera.io/examples/hi-c/data.zip"
     )
 
     # Set EXAMPLE_CUSTOM_DATA in an input
