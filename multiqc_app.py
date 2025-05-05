@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
-from zipfile import ZipFile
 from urllib.request import urlopen
+from zipfile import ZipFile
 
 import multiqc
 import pandas as pd
@@ -11,19 +11,14 @@ import streamlit.components.v1 as components
 from multiqc.plots import bargraph
 
 # Sidebar
-# --- Initialize Session State --- #
 if "bytes_data" not in st.session_state:
     st.session_state.bytes_data = None
-if "data_source" not in st.session_state:
-    st.session_state.data_source = None
 
 input_method = None
 uploaded_file = None
 data_url = "https://seqera.io/examples/hi-c/data.zip"
 with st.sidebar:
     st.title("MultiQC Streamlit App")
-
-    # --- Input Method Selection --- #
     input_method = st.radio(
         "Choose input method",
         ("Load from URL", "Upload File")
@@ -34,20 +29,17 @@ with st.sidebar:
         data_url = st.text_input("Demo Data URL", data_url)
         if st.button("Fetch and Load Data"):
             try:
-                http_response = urlopen(data_url)
-                st.session_state.bytes_data = http_response.read()
-                st.session_state.data_source = f"URL: {data_url}"
+                st.session_state.bytes_data = urlopen(data_url).read()
             except Exception as e:
                 st.error(f"Error downloading from URL: {e}")
                 st.session_state.bytes_data = None
-                st.session_state.data_source = None
 
     elif input_method == "Upload File":
         st.write("Upload a MultiQC data ZIP file to analyze.")
         uploaded_file = st.file_uploader("Upload Data ZIP", type="zip")
         if uploaded_file is not None:
             st.session_state.bytes_data = uploaded_file.getvalue()
-            st.session_state.data_source = f"File: {uploaded_file.name}"
+            data_url = uploaded_file.name
 
     # Set EXAMPLE_CUSTOM_DATA in an input - Keep in sidebar for editing anytime
     EXAMPLE_CUSTOM_DATA = st.text_area(
@@ -63,24 +55,19 @@ with st.sidebar:
 # Set the title
 st.title("MultiQC Streamlit App")
 
-# --- Data Loading --- #
-data_loaded_successfully = False
-bytes_data = None
-
 # Check if data exists in session state
 if st.session_state.bytes_data is None:
     st.info("Please select an input method and provide data using the sidebar to start the analysis.")
 else:
-    st.success(f"Data loaded from {st.session_state.data_source}")
+    st.success(f"Data loaded from {data_url}")
 
     # Create a text element and let the reader know the data is loading.
     data_load_state = st.text("Extracting data...")
     try:
         # Use data from session state
         with ZipFile(BytesIO(st.session_state.bytes_data)) as zipfile:
-            zipfile.extractall(path="./data") # Extract to a known directory
+            zipfile.extractall(path="./data")
         data_load_state.text("Extracting data...done!")
-        data_loaded_successfully = True
     except Exception as e:
         st.error(f"Error extracting ZIP file: {e}")
         st.stop()
