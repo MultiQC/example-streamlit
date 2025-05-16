@@ -66,7 +66,7 @@ else:
     try:
         # Use data from session state
         with ZipFile(BytesIO(st.session_state.bytes_data)) as zipfile:
-            zipfile.extractall(path="./data")
+            zipfile.extractall(path="./multiqc_streamlit_data")
         data_load_state.text("Extracting data...done!")
     except Exception as e:
         st.error(f"Error extracting ZIP file: {e}")
@@ -75,7 +75,7 @@ else:
     # Parse logs
     data_parse_state = st.text("Parsing logs...")
     try:
-        multiqc.parse_logs("./data")
+        multiqc.parse_logs("./multiqc_streamlit_data")
         data_parse_state.text("Parsing logs...done!")
     except Exception as e:
         st.error(f"Error parsing logs: {e}")
