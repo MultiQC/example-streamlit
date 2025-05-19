@@ -21,7 +21,7 @@ with st.sidebar:
     st.title("MultiQC Streamlit App")
     input_method = st.radio(
         "Choose input method",
-        ("Load from URL", "Upload File")
+        ("Load from URL", "Upload File", "Server Path")
     )
 
     if input_method == "Load from URL":
@@ -40,6 +40,21 @@ with st.sidebar:
         if uploaded_file is not None:
             st.session_state.bytes_data = uploaded_file.getvalue()
             data_url = uploaded_file.name
+            
+    elif input_method == "Server Path":
+        st.write("Enter the full path to a MultiQC data ZIP file on the server.")
+        server_path = st.text_input("Server Path")
+        if st.button("Load from Server Path"):
+            try:
+                with open(server_path, 'rb') as f:
+                    st.session_state.bytes_data = f.read()
+                data_url = server_path.split('/')[-1]  # Get filename from path
+            except FileNotFoundError:
+                st.error(f"File not found at path: {server_path}")
+                st.session_state.bytes_data = None
+            except Exception as e:
+                st.error(f"Error reading file from server path: {e}")
+                st.session_state.bytes_data = None
 
     # Set EXAMPLE_CUSTOM_DATA in an input - Keep in sidebar for editing anytime
     EXAMPLE_CUSTOM_DATA = st.text_area(
